@@ -27,6 +27,7 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Fetch, select and update RSS feed
+        timeout-minutes: 4
         working-directory: src
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
@@ -42,7 +43,7 @@ jobs:
           FEED_BASE_URL: ${{ vars.FEED_BASE_URL }}
           FEED_TITLE: ${{ vars.FEED_TITLE || 'Mutolaa | Kunlik tanlov' }}
           DRY_RUN: ${{ inputs.dry_run && 'true' || '' }}
-        run: python main.py
+        run: python -u main.py
 
       - name: Commit updated feed and state
         run: |
