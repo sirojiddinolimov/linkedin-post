@@ -43,6 +43,9 @@ def fetch_yesterdays_posts(config: Config) -> list[ChannelPost]:
         StringSession(config.telegram_session_string),
         config.telegram_api_id,
         config.telegram_api_hash,
+        proxy=config.telegram_proxy(),
+        connection_retries=3,
+        timeout=15,
     )
 
     posts: list[ChannelPost] = []

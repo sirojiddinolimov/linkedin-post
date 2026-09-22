@@ -53,6 +53,26 @@ Workflow (`.github/workflows/daily-linkedin-post.yml`) har kuni soat 08:00
    bo'lgani uchun a'zolik shart emas, lekin bir marta kanalni ochib
    ko'rish tavsiya etiladi).
 
+### 1b. Proxy (GitHub Actions uchun majburiy)
+
+GitHub Actions serverlarining IP manzillari Telegram tomonidan
+bloklanadi/cheklanadi (bu ko'plab bulutli provayderlar — AWS, GCP, Azure,
+GitHub Actions — uchun keng tarqalgan holat). Shuning uchun workflow
+ichida Telethon **proxy orqali** ulanishi kerak, aks holda ulanish hech
+qachon tugallanmaydi.
+
+1. Ishonchli SOCKS5 proxy xizmati oling (masalan Webshare, ProxyScrape,
+   yoki boshqa istalgan SOCKS5 provider — Telegram uchun maxsus emas,
+   oddiy SOCKS5 kifoya).
+2. Proxy manzili (host), porti, foydalanuvchi nomi va parolini oling.
+3. Bularni GitHub Secrets sifatida qo'shing (pastga qarang:
+   `TELEGRAM_PROXY_HOST`, `TELEGRAM_PROXY_PORT`,
+   `TELEGRAM_PROXY_USERNAME`, `TELEGRAM_PROXY_PASSWORD`).
+
+Proxy sozlanmasa, workflow `TELEGRAM_PROXY_HOST` bo'shligini ko'rib,
+proxysiz ulanishga harakat qiladi — bu GitHub Actions'da odatda
+muvaffaqiyatsiz tugaydi (5 daqiqalik timeout bilan).
+
 ### 2. (Ixtiyoriy) Claude bilan tanlash/qayta yozish
 
 `ANTHROPIC_API_KEY` berilsa, eng muhim post AI yordamida tanlanadi va
@@ -77,6 +97,10 @@ ishlatiladi.
 - `TELEGRAM_API_ID`
 - `TELEGRAM_API_HASH`
 - `TELEGRAM_SESSION_STRING`
+- `TELEGRAM_PROXY_HOST`
+- `TELEGRAM_PROXY_PORT`
+- `TELEGRAM_PROXY_USERNAME` (proxy talab qilsa)
+- `TELEGRAM_PROXY_PASSWORD` (proxy talab qilsa)
 - `ANTHROPIC_API_KEY` (ixtiyoriy)
 
 **Settings → Secrets and variables → Actions → Variables:**
@@ -85,6 +109,8 @@ ishlatiladi.
   bilan yoki bo'lmasa ham farqi yo'q), masalan
   `https://sirojiddinolimov.github.io/linkedin-post/`
 - `TELEGRAM_CHANNEL` = `mutolaaxona` (ixtiyoriy, standart shu)
+- `TELEGRAM_PROXY_TYPE` = `socks5` (ixtiyoriy, standart shu; `socks4`/`http`
+  ham bo'lishi mumkin)
 - `POST_TIMEZONE` = `Asia/Tashkent` (ixtiyoriy, standart shu)
 - `FEED_TITLE` = `Mutolaa | Kunlik tanlov` (ixtiyoriy)
 
