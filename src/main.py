@@ -7,6 +7,7 @@ except ImportError:  # pragma: no cover
     from backports.zoneinfo import ZoneInfo  # type: ignore
 
 from config import Config
+from media import download_post_photo
 from messages_store import load_yesterdays_posts
 from rss_feed import add_daily_entry
 from select_post import select_daily_post
@@ -39,8 +40,12 @@ def main() -> int:
         print("DRY_RUN set; not updating the RSS feed.")
         return 0
 
-    add_daily_entry(chosen, final_text, yesterday, config)
-    print(f"Added {yesterday} entry to docs/feed.xml")
+    image_path = None
+    if chosen.has_photo and chosen.photo_file_id:
+        image_path = download_post_photo(chosen.photo_file_id, chosen.message_id)
+
+    add_daily_entry(chosen, final_text, yesterday, config, image_path=image_path)
+    print(f"Added {yesterday} entry to docs/feed.xml" + (f" with image {image_path}" if image_path else ""))
 
     save_last_posted(yesterday, chosen.message_id)
     return 0

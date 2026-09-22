@@ -38,12 +38,18 @@ def _render_feed(entries: list[dict], config: Config) -> str:
         description = escape(entry["text"])
         link = escape(entry["source_link"])
         guid = escape(entry["guid"])
+        enclosure = ""
+        image_path = entry.get("image_path")
+        if image_path:
+            image_url = escape(config.feed_base_url + image_path)
+            enclosure = f'      <enclosure url="{image_url}" type="image/jpeg"/>\n'
         items_xml.append(
             "    <item>\n"
             f"      <title>{title}</title>\n"
             f"      <link>{link}</link>\n"
             f"      <guid isPermaLink=\"false\">{guid}</guid>\n"
             f"      <pubDate>{pub_date}</pubDate>\n"
+            f"{enclosure}"
             f"      <description>{description}</description>\n"
             "    </item>"
         )
@@ -66,7 +72,13 @@ def _render_feed(entries: list[dict], config: Config) -> str:
     )
 
 
-def add_daily_entry(post: "ChannelPost", final_text: str, entry_date: str, config: Config) -> None:
+def add_daily_entry(
+    post: "ChannelPost",
+    final_text: str,
+    entry_date: str,
+    config: Config,
+    image_path: str | None = None,
+) -> None:
     """Append today's chosen post to docs/history.json and regenerate docs/feed.xml
     (the RSS feed LinkedIn's Page "Add source" feature reads from)."""
     entries = _load_history()
@@ -80,6 +92,7 @@ def add_daily_entry(post: "ChannelPost", final_text: str, entry_date: str, confi
         "text": final_text.strip(),
         "published_at": datetime.now(timezone.utc).isoformat(),
         "guid": f"mutolaa-linkedin-{entry_date}-{post.message_id}",
+        "image_path": image_path,
     }
 
     entries = [e for e in entries if e["date"] != entry_date]

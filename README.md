@@ -26,16 +26,20 @@ from cloud IPs like GitHub Actions runners, which is why this uses the
    meaningful post from yesterday's collected messages and translates it
    into a polished English LinkedIn post. Without `ANTHROPIC_API_KEY` it
    falls back to just picking the longest post, untranslated.
-3. **`src/rss_feed.py`** — appends the chosen post to `docs/history.json`
-   and regenerates `docs/feed.xml` (RSS 2.0, last `FEED_MAX_ITEMS` entries).
-4. **`src/state.py`** — records the last processed date in
+3. **`src/media.py`** — if the chosen post has a photo, downloads it via the
+   Bot API and saves it to `docs/images/<message_id>.jpg` so it can be
+   served publicly and attached to the RSS item.
+4. **`src/rss_feed.py`** — appends the chosen post (and image, if any) to
+   `docs/history.json` and regenerates `docs/feed.xml` (RSS 2.0, last
+   `FEED_MAX_ITEMS` entries, image as an `<enclosure>`).
+5. **`src/state.py`** — records the last processed date in
    `state/last_post.json` so a day is never published twice.
 
 Two GitHub Actions workflows run this automatically:
 - `.github/workflows/collect-messages.yml` — every 15 minutes, runs the
   collector.
-- `.github/workflows/daily-linkedin-post.yml` — once a day, picks
-  yesterday's best post and updates the RSS feed.
+- `.github/workflows/daily-linkedin-post.yml` — once a day at 11:00
+  Asia/Tashkent, picks yesterday's best post and updates the RSS feed.
 
 ## Setup
 
@@ -102,6 +106,11 @@ effectively required for the "post in English" behavior.
 From then on it's fully automatic: bot collects posts → daily workflow
 picks + translates the best one → `docs/feed.xml` updates → GitHub Pages
 serves it → LinkedIn picks it up from the RSS source and posts it.
+
+**About images:** when the chosen Telegram post has a photo, it's included
+in the RSS item as an `<enclosure>`. Whether LinkedIn's RSS source actually
+attaches that image to the published post is up to LinkedIn's own feature
+(not something this repo controls) - it's best-effort, not guaranteed.
 
 ## Local testing
 

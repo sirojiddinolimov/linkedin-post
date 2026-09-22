@@ -18,6 +18,7 @@ class ChannelPost:
     date_utc: datetime
     link: str
     has_photo: bool
+    photo_file_id: str | None = None
 
 
 def _yesterday_window_utc(tz_name: str):
@@ -52,6 +53,7 @@ def load_yesterdays_posts(post_timezone: str) -> list[ChannelPost]:
                     date_utc=date_utc,
                     link=entry["link"],
                     has_photo=entry.get("has_photo", False),
+                    photo_file_id=entry.get("photo_file_id"),
                 )
             )
 

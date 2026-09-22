@@ -96,13 +96,16 @@ def collect() -> int:
             if message_id in seen_ids:
                 continue
             seen_ids.add(message_id)
+            photo_sizes = post.get("photo") or []
             new_entries.append(
                 {
                     "message_id": message_id,
                     "date_utc": post["date"],  # unix timestamp, UTC
                     "text": text,
                     "link": f"https://t.me/{channel}/{message_id}",
-                    "has_photo": "photo" in post,
+                    "has_photo": bool(photo_sizes),
+                    # Largest PhotoSize is last; None if there's no photo.
+                    "photo_file_id": photo_sizes[-1]["file_id"] if photo_sizes else None,
                 }
             )
 
