@@ -1,0 +1,49 @@
+name: Daily LinkedIn post from Telegram
+
+on:
+  schedule:
+    # 08:00 Asia/Tashkent (UTC+5) = 03:00 UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the post without publishing to LinkedIn"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run daily post
+        working-directory: src
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION_STRING: ${{ secrets.TELEGRAM_SESSION_STRING }}
+          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'mutolaaxona' }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_ORG_URN: ${{ vars.LINKEDIN_ORG_URN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          POST_TIMEZONE: ${{ vars.POST_TIMEZONE || 'Asia/Tashkent' }}
+          DRY_RUN: ${{ inputs.dry_run && 'true' || '' }}
+        run: python main.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state/last_post.json
+          git diff --cached --quiet || git commit -m "chore: record daily LinkedIn post state"
+          git push
