@@ -1,159 +1,115 @@
-# Mutolaa: Telegram → RSS → LinkedIn kunlik post
+# Mutolaa: Telegram → RSS → LinkedIn daily post
 
-Har kuni `@mutolaaxona` Telegram kanalidagi o'tgan kunning barcha postlari
-orasidan **eng muhim va ma'noli bittasi** tanlanadi va bitta RSS feed
-(`docs/feed.xml`, GitHub Pages orqali ochiq)ga yangi element sifatida
-qo'shiladi. LinkedIn'ning **kompaniya sahifasidagi o'z "RSS source"
-funksiyasi** (Settings → Manage sources → Add source) shu feedni kuzatib
-turadi va yangi element chiqqanda uni Mutolaa LinkedIn sahifasida e'lon
-qiladi — LinkedIn Developer App, app verification yoki access token kerak
-emas.
+Every day, the single most important/meaningful post from the previous day
+in the `@mutolaaxona` Telegram channel is picked, translated to English, and
+added as a new item to an RSS feed (`docs/feed.xml`, served publicly via
+GitHub Pages). LinkedIn's own company-page **RSS source** feature
+(Settings → Manage sources → Add source) watches that feed and publishes the
+new item to the Mutolaa LinkedIn page — no LinkedIn Developer App, app
+verification, or access token needed.
 
-**Muhim:** GitHub Actions serverlarining IP manzillari Telegram tomonidan
-bloklanadi/cheklanadi, shuning uchun kunlik ishlov **mahalliy kompyuterda**
-(sizning yoki biror doim yoniq turadigan kompyuter/serverda) cron/Task
-Scheduler orqali ishga tushiriladi, natija esa GitHub'ga push qilinadi.
-GitHub Actions faqat GitHub Pages'ni avtomatik deploy qilish uchun
-ishlatiladi.
+Only one entry is added per day — `state/last_post.json` tracks the last
+processed date so the same day is never published twice.
 
-Kuniga faqat bitta yozuv qo'shiladi — `state/last_post.json` faylida oxirgi
-qayta ishlangan sana saqlanadi, shu sana uchun ikkinchi marta yozuv
-qo'shilmaydi.
+## Architecture
 
-## Ishlash tartibi
+Telegram's raw user-login protocol (MTProto/Telethon) gets blocked/throttled
+from cloud IPs like GitHub Actions runners, which is why this uses the
+**Telegram Bot API** instead (plain HTTPS - works fine from GitHub Actions):
 
-1. `src/telegram_fetch.py` — Telethon (user session) orqali kanalning
-   kechagi (`POST_TIMEZONE`, standart `Asia/Tashkent`) barcha matnli
-   postlarini oladi.
-2. `src/select_post.py` — agar `ANTHROPIC_API_KEY` berilgan bo'lsa, Claude
-   eng mazmunli postni tanlaydi va uni qisqa, ixcham matnga (o'zbek tilida,
-   hashtaglar bilan) qayta yozadi. Kalit berilmagan bo'lsa, ko'rishlar/
-   forward/reaksiyalar va uzunlik bo'yicha oddiy heuristika ishlatiladi va
-   post matni o'zgartirilmasdan ishlatiladi.
-3. `src/rss_feed.py` — tanlangan postni `docs/history.json`ga qo'shadi va
-   `docs/feed.xml` (RSS 2.0) faylini shundan qayta yaratadi (oxirgi
-   `FEED_MAX_ITEMS` ta yozuv saqlanadi).
-4. `src/state.py` — oxirgi qayta ishlangan sanani `state/last_post.json`'ga
-   yozadi — kuniga bitta yozuv qoidasi shu bilan ta'minlanadi.
-5. `scripts/run_daily.sh` (yoki Windows uchun `run_daily.ps1`) — yuqoridagi
-   hammasini ishga tushiradi va natijani (`docs/feed.xml`,
-   `docs/history.json`, `state/last_post.json`) git orqali push qiladi.
+1. **`src/bot_collect.py`** — a Telegram bot (must be an admin of the
+   channel) polls for new channel posts every 15 minutes via GitHub Actions
+   and appends them to `data/messages.jsonl` (a simple git-committed log,
+   since the Bot API has no "channel history" endpoint - only new posts as
+   they happen).
+2. **`src/select_post.py`** — once a day, Claude picks the most
+   meaningful post from yesterday's collected messages and translates it
+   into a polished English LinkedIn post. Without `ANTHROPIC_API_KEY` it
+   falls back to just picking the longest post, untranslated.
+3. **`src/rss_feed.py`** — appends the chosen post to `docs/history.json`
+   and regenerates `docs/feed.xml` (RSS 2.0, last `FEED_MAX_ITEMS` entries).
+4. **`src/state.py`** — records the last processed date in
+   `state/last_post.json` so a day is never published twice.
 
-## Sozlash
+Two GitHub Actions workflows run this automatically:
+- `.github/workflows/collect-messages.yml` — every 15 minutes, runs the
+  collector.
+- `.github/workflows/daily-linkedin-post.yml` — once a day, picks
+  yesterday's best post and updates the RSS feed.
 
-### 1. Repo'ni kompyuteringizga klonlash
+## Setup
 
-```bash
-git clone https://github.com/sirojiddinolimov/linkedin-post
-cd linkedin-post
-git checkout claude/telegram-linkedin-posts-safyyk
-pip install -r requirements.txt
-```
+### 1. Telegram bot
 
-`git push` ishlashi uchun kompyuteringizda shu repo uchun GitHub
-autentifikatsiyasi sozlangan bo'lishi kerak (masalan `gh auth login`, yoki
-SSH kalit, yoki avvalroq shu repo'ni klonlab push qilgan bo'lsangiz odatda
-allaqachon sozlangan).
+1. You already have a bot (e.g. via @BotFather) and its token.
+2. Add the bot as an **administrator** of `@mutolaaxona` (Settings →
+   Administrators → Add Admin in the channel). This is required - the Bot
+   API only delivers channel posts to bots that are channel admins.
+3. Save the bot's token as the `TELEGRAM_BOT_TOKEN` GitHub secret (below).
 
-### 2. Telegram
+### 2. Anthropic API key (for English translation + selection)
 
-1. https://my.telegram.org → API development tools'dan `api_id` va
-   `api_hash` oling.
-2. Session string yarating:
-   ```bash
-   cd src
-   python generate_session.py
-   cd ..
-   ```
-   Telefon raqamingiz va Telegram yuborgan kodni kiriting. Natijada chiqqan
-   `TELEGRAM_SESSION_STRING` qiymatini saqlab qo'ying (bu sizning
-   hisobingizga to'liq kirish huquqi beradi — hech kimga bermang).
-3. Hisobingiz `@mutolaaxona` kanalini kuzatib turishi kerak (ochiq kanal
-   bo'lgani uchun a'zolik shart emas, lekin bir marta kanalni ochib
-   ko'rish tavsiya etiladi).
+Get one at https://console.anthropic.com → API Keys → Create Key, and save
+it as the `ANTHROPIC_API_KEY` GitHub secret. Without it, the daily post
+falls back to the original Uzbek text, untranslated - so this key is
+effectively required for the "post in English" behavior.
 
-Kompyuteringizning oddiy uy/ofis interneti Telegram uchun bloklanmagani
-sababli, bu yerda **proxy kerak emas** (`TELEGRAM_PROXY_*` maydonlarini
-`.env`da bo'sh qoldiring).
-
-### 3. (Ixtiyoriy) Claude bilan tanlash/qayta yozish
-
-`ANTHROPIC_API_KEY` berilsa, eng muhim post AI yordamida tanlanadi va
-qisqa, tushunarli matnga moslashtiriladi. Berilmasa, oddiy heuristika
-ishlatiladi.
-
-### 4. GitHub Pages'ni yoqish
+### 3. Enable GitHub Pages
 
 1. Repo → **Settings → Pages**.
-2. **Source**: "Deploy from a branch", **Branch**: `main` (yoki default
-   branch) / **`/docs`** ni tanlang, **Save**.
-3. Bir necha daqiqadan so'ng sahifangiz manzili paydo bo'ladi, masalan:
-   `https://sirojiddinolimov.github.io/linkedin-post/`
-4. Feed'ning o'zi shu manzil + `feed.xml` bo'ladi:
-   `https://sirojiddinolimov.github.io/linkedin-post/feed.xml`
+2. **Source**: "Deploy from a branch", **Branch**: your default branch /
+   **`/docs`**, **Save**.
+3. After a couple of minutes your Pages URL appears, e.g.
+   `https://sirojiddinolimov.github.io/linkedin-post/`. The feed itself is
+   that URL + `feed.xml`.
 
-### 5. `.env` faylini to'ldirish
+### 4. GitHub secrets & variables
+
+**Settings → Secrets and variables → Actions → Secrets:**
+
+- `TELEGRAM_BOT_TOKEN`
+- `ANTHROPIC_API_KEY`
+
+**Settings → Secrets and variables → Actions → Variables:**
+
+- `FEED_BASE_URL` = your GitHub Pages URL from step 3
+- `TELEGRAM_CHANNEL` = `mutolaaxona` (optional, this is the default)
+- `POST_TIMEZONE` = `Asia/Tashkent` (optional, this is the default)
+- `FEED_TITLE` = `Mutolaa | Daily pick` (optional)
+
+### 5. Test it
+
+1. **Actions → Collect Telegram channel posts → Run workflow.** Check the
+   log; it should say `Collected N new post(s)`. If `N` stays 0 even after
+   the channel has posted recently, double check the bot is really an admin
+   of the channel.
+2. Wait for at least one day's worth of posts to accumulate (or run the
+   collector a few times across a day), then run **Actions → Daily digest
+   -> RSS feed for LinkedIn → Run workflow** with `dry_run: true` to see the
+   picked/translated post in the log without publishing it. Run again with
+   `dry_run: false` to actually update `docs/feed.xml`.
+
+### 6. Connect LinkedIn to the RSS feed
+
+1. Go to https://www.linkedin.com/company/102440497/admin/settings/manage-content/
+   as a Mutolaa admin.
+2. Click **Add source**.
+3. Enter the feed URL: `https://sirojiddinolimov.github.io/linkedin-post/feed.xml`
+4. Follow LinkedIn's prompts - once approved, LinkedIn publishes a post
+   whenever a new item appears in the feed (once a day, when the daily
+   workflow runs).
+
+From then on it's fully automatic: bot collects posts → daily workflow
+picks + translates the best one → `docs/feed.xml` updates → GitHub Pages
+serves it → LinkedIn picks it up from the RSS source and posts it.
+
+## Local testing
 
 ```bash
 cp .env.example .env
+# fill in TELEGRAM_BOT_TOKEN, ANTHROPIC_API_KEY, FEED_BASE_URL
+export $(grep -v '^#' .env | xargs)
+cd src
+python bot_collect.py        # collect any new posts
+DRY_RUN=true python main.py  # preview the daily pick without publishing
 ```
-
-`.env` faylida quyidagilarni to'ldiring: `TELEGRAM_API_ID`,
-`TELEGRAM_API_HASH`, `TELEGRAM_SESSION_STRING`, `FEED_BASE_URL` (4-qadamda
-olingan Pages manzili), ixtiyoriy `ANTHROPIC_API_KEY`. `TELEGRAM_PROXY_*`
-maydonlarini bo'sh qoldiring.
-
-Avval qo'lda sinab ko'ring:
-```bash
-export DRY_RUN=true
-bash scripts/run_daily.sh   # yoki: powershell scripts/run_daily.ps1
-```
-Bu hech narsani commit qilmasdan, tanlangan postni terminalga chiqaradi.
-Hammasi to'g'ri ko'rinsa, `DRY_RUN`siz ishga tushirib, haqiqatan ham
-`docs/feed.xml` yangilanib, GitHub'ga push bo'lishini tekshiring.
-
-### 6. Kunlik avtomatik ishga tushirish
-
-**macOS / Linux (cron):**
-```bash
-crontab -e
-```
-Quyidagi qatorni qo'shing (har kuni soat 08:00 da ishga tushadi):
-```
-0 8 * * * cd /to'liq/yo'l/linkedin-post && bash scripts/run_daily.sh >> /tmp/mutolaa-daily.log 2>&1
-```
-
-**Windows (Task Scheduler):**
-1. Task Scheduler → **Create Basic Task**.
-2. Trigger: **Daily**, vaqt: 08:00.
-3. Action: **Start a program** → Program: `powershell.exe`, Arguments:
-   `-ExecutionPolicy Bypass -File "C:\to'liq\yo'l\linkedin-post\scripts\run_daily.ps1"`.
-
-Kompyuteringiz shu vaqtda yoqiq va internetga ulangan bo'lishi kifoya —
-doimiy ishlab turishi shart emas.
-
-### 7. LinkedIn'da RSS manbani ulash
-
-1. https://www.linkedin.com/company/102440497/admin/settings/manage-content/
-   sahifasiga o'ting (Mutolaa admin sifatida).
-2. **Add source** tugmasini bosing.
-3. Feed manzilini kiriting:
-   `https://sirojiddinolimov.github.io/linkedin-post/feed.xml`
-4. LinkedIn ko'rsatmalariga amal qiling — feed tasdiqlangach, LinkedIn har
-   safar unda yangi element paydo bo'lganda (kuniga bir marta) uni
-   sahifangizda taklif qiladi/e'lon qiladi.
-
-Shundan keyin butun jarayon avtomatik: kompyuteringizdagi kunlik vazifa →
-`docs/feed.xml` yangilanadi va GitHub'ga push bo'ladi → GitHub Pages uni
-darhol serve qiladi → LinkedIn shu feedni kuzatib, yangi postni sahifada
-chiqaradi.
-
-## GitHub Actions haqida
-
-`.github/workflows/daily-linkedin-post.yml` endi faqat **qo'lda sinash**
-uchun (`workflow_dispatch`, standart `dry_run: true`) — Telegram
-serverlarga GitHub Actions IP'laridan ulanib bo'lmagani uchun avtomatik
-`schedule` olib tashlangan. Agar kelajakda baribir GitHub Actions orqali
-ishlatmoqchi bo'lsangiz, `TELEGRAM_PROXY_HOST`/`PORT`/`USERNAME`/`PASSWORD`
-Secrets'larini SOCKS5 proxy bilan to'ldiring (kod buni qo'llab-quvvatlaydi),
-lekin hozircha tavsiya etilgan yo'l — mahalliy cron.

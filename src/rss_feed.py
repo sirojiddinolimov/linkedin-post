@@ -8,7 +8,7 @@ from xml.sax.saxutils import escape
 from config import Config
 
 if TYPE_CHECKING:
-    from telegram_fetch import ChannelPost
+    from messages_store import ChannelPost
 
 DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
 HISTORY_PATH = os.path.join(DOCS_DIR, "history.json")
@@ -56,9 +56,9 @@ def _render_feed(entries: list[dict], config: Config) -> str:
         "  <channel>\n"
         f"    <title>{escape(config.feed_title)}</title>\n"
         f"    <link>{escape(channel_link)}</link>\n"
-        "    <description>@" + escape(config.telegram_channel)
-        + " kanalidagi har kunning eng muhim posti</description>\n"
-        "    <language>uz</language>\n"
+        "    <description>Daily most-meaningful post from @" + escape(config.telegram_channel)
+        + "</description>\n"
+        "    <language>en</language>\n"
         f"    <lastBuildDate>{now}</lastBuildDate>\n"
         f"{body}\n"
         "  </channel>\n"

@@ -7,10 +7,10 @@ except ImportError:  # pragma: no cover
     from backports.zoneinfo import ZoneInfo  # type: ignore
 
 from config import Config
+from messages_store import load_yesterdays_posts
 from rss_feed import add_daily_entry
 from select_post import select_daily_post
 from state import load_last_posted_date, save_last_posted
-from telegram_fetch import fetch_yesterdays_posts
 
 
 def main() -> int:
@@ -24,9 +24,9 @@ def main() -> int:
         print(f"Already posted for {yesterday}; nothing to do.")
         return 0
 
-    posts = fetch_yesterdays_posts(config)
+    posts = load_yesterdays_posts(config.post_timezone)
     if not posts:
-        print(f"No posts found in @{config.telegram_channel} for {yesterday}; skipping.")
+        print(f"No collected posts for {yesterday}; skipping.")
         return 0
 
     chosen, final_text = select_daily_post(posts, config)
