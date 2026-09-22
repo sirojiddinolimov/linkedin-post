@@ -28,24 +28,23 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Fetch, select and update RSS feed
+        timeout-minutes: 4
         working-directory: src
-        timeout-minutes: 5
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_STRING: ${{ secrets.TELEGRAM_SESSION_STRING }}
-          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'mutolaaxona' }}
-          TELEGRAM_PROXY_TYPE: ${{ vars.TELEGRAM_PROXY_TYPE || 'socks5' }}
           TELEGRAM_PROXY_HOST: ${{ secrets.TELEGRAM_PROXY_HOST }}
           TELEGRAM_PROXY_PORT: ${{ secrets.TELEGRAM_PROXY_PORT }}
           TELEGRAM_PROXY_USERNAME: ${{ secrets.TELEGRAM_PROXY_USERNAME }}
           TELEGRAM_PROXY_PASSWORD: ${{ secrets.TELEGRAM_PROXY_PASSWORD }}
+          TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'mutolaaxona' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           POST_TIMEZONE: ${{ vars.POST_TIMEZONE || 'Asia/Tashkent' }}
           FEED_BASE_URL: ${{ vars.FEED_BASE_URL }}
           FEED_TITLE: ${{ vars.FEED_TITLE || 'Mutolaa | Kunlik tanlov' }}
           DRY_RUN: ${{ inputs.dry_run && 'true' || '' }}
-        run: python main.py
+        run: python -u main.py
 
       - name: Commit updated feed and state
         run: |

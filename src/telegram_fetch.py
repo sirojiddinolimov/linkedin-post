@@ -43,16 +43,12 @@ def fetch_yesterdays_posts(config: Config) -> list[ChannelPost]:
         StringSession(config.telegram_session_string),
         config.telegram_api_id,
         config.telegram_api_hash,
-        proxy=config.telegram_proxy(),
-        connection_retries=3,
-        timeout=15,
+        proxy=config.telegram_proxy,
     )
 
     posts: list[ChannelPost] = []
     with client:
-        print(f"Connected to Telegram; resolving @{config.telegram_channel}...", flush=True)
         entity = client.get_entity(config.telegram_channel)
-        print("Resolved channel; fetching messages...", flush=True)
         for message in client.iter_messages(entity, offset_date=end_utc, reverse=False):
             if message.date is None:
                 continue
