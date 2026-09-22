@@ -32,6 +32,7 @@ class Config:
                 "socks5",
                 proxy_host,
                 int(proxy_port),
+                True,
                 proxy_username or None,
                 proxy_password or None,
             )
