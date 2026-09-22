@@ -1,4 +1,4 @@
-name: Daily LinkedIn post from Telegram
+name: Daily Telegram digest -> RSS feed for LinkedIn
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Print the post without publishing to LinkedIn"
+        description: "Print the entry without updating the feed"
         type: boolean
         default: false
 
@@ -26,24 +26,24 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Run daily post
+      - name: Fetch, select and update RSS feed
         working-directory: src
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_STRING: ${{ secrets.TELEGRAM_SESSION_STRING }}
           TELEGRAM_CHANNEL: ${{ vars.TELEGRAM_CHANNEL || 'mutolaaxona' }}
-          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_ORG_URN: ${{ vars.LINKEDIN_ORG_URN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           POST_TIMEZONE: ${{ vars.POST_TIMEZONE || 'Asia/Tashkent' }}
+          FEED_BASE_URL: ${{ vars.FEED_BASE_URL }}
+          FEED_TITLE: ${{ vars.FEED_TITLE || 'Mutolaa | Kunlik tanlov' }}
           DRY_RUN: ${{ inputs.dry_run && 'true' || '' }}
         run: python main.py
 
-      - name: Commit updated state
+      - name: Commit updated feed and state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state/last_post.json
-          git diff --cached --quiet || git commit -m "chore: record daily LinkedIn post state"
+          git add docs/feed.xml docs/history.json state/last_post.json
+          git diff --cached --quiet || git commit -m "chore: publish daily digest entry"
           git push

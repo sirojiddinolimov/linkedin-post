@@ -7,7 +7,7 @@ except ImportError:  # pragma: no cover
     from backports.zoneinfo import ZoneInfo  # type: ignore
 
 from config import Config
-from linkedin_publish import publish_post
+from rss_feed import add_daily_entry
 from select_post import select_daily_post
 from state import load_last_posted_date, save_last_posted
 from telegram_fetch import fetch_yesterdays_posts
@@ -31,18 +31,18 @@ def main() -> int:
 
     chosen, final_text = select_daily_post(posts, config)
     print(f"Selected message {chosen.message_id} ({chosen.link})")
-    print("---- LinkedIn post text ----")
+    print("---- RSS item text ----")
     print(final_text)
-    print("-----------------------------")
+    print("------------------------")
 
     if config.dry_run:
-        print("DRY_RUN set; not publishing to LinkedIn.")
+        print("DRY_RUN set; not updating the RSS feed.")
         return 0
 
-    post_urn = publish_post(final_text, config)
-    print(f"Published to LinkedIn: {post_urn}")
+    add_daily_entry(chosen, final_text, yesterday, config)
+    print(f"Added {yesterday} entry to docs/feed.xml")
 
-    save_last_posted(yesterday, chosen.message_id, post_urn)
+    save_last_posted(yesterday, chosen.message_id)
     return 0
 
 

@@ -11,14 +11,13 @@ def load_last_posted_date() -> str | None:
         return json.load(f).get("date")
 
 
-def save_last_posted(date_str: str, telegram_message_id: int, linkedin_post_urn: str) -> None:
+def save_last_posted(date_str: str, telegram_message_id: int) -> None:
     os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
     with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "date": date_str,
                 "telegram_message_id": telegram_message_id,
-                "linkedin_post_urn": linkedin_post_urn,
             },
             f,
             indent=2,
