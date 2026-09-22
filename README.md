@@ -65,11 +65,9 @@ allaqachon sozlangan).
    python generate_session.py
    cd ..
    ```
-   Terminalda ko'rsatilgan QR kodni Telegram ilovasida **Settings -> Devices ->
-   Link Desktop Device** orqali skanerlang. Agar ikki bosqichli himoya yoqilgan
-   bo'lsa, script 2FA parolni so'raydi. Natijada chiqqan
-   `TELEGRAM_SESSION_STRING` qiymatini saqlab qo'ying (bu sizning hisobingizga
-   to'liq kirish huquqi beradi — hech kimga bermang).
+   Telefon raqamingiz va Telegram yuborgan kodni kiriting. Natijada chiqqan
+   `TELEGRAM_SESSION_STRING` qiymatini saqlab qo'ying (bu sizning
+   hisobingizga to'liq kirish huquqi beradi — hech kimga bermang).
 3. Hisobingiz `@mutolaaxona` kanalini kuzatib turishi kerak (ochiq kanal
    bo'lgani uchun a'zolik shart emas, lekin bir marta kanalni ochib
    ko'rish tavsiya etiladi).
