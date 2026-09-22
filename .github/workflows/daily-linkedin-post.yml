@@ -1,15 +1,16 @@
-name: Daily Telegram digest -> RSS feed for LinkedIn
+name: Manual test - Telegram digest -> RSS feed for LinkedIn
 
+# GitHub Actions runner IPs are blocked/throttled by Telegram, so the daily
+# run happens locally instead (see scripts/run_daily.sh / run_daily.ps1 and
+# the README's "Mahalliy avtomatlashtirish" section). This workflow is kept
+# only for manually testing the fetch/select logic against real secrets.
 on:
-  schedule:
-    # 08:00 Asia/Tashkent (UTC+5) = 03:00 UTC
-    - cron: "0 3 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
         description: "Print the entry without updating the feed"
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
