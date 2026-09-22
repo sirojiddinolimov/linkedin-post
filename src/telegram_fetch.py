@@ -47,7 +47,9 @@ def fetch_yesterdays_posts(config: Config) -> list[ChannelPost]:
 
     posts: list[ChannelPost] = []
     with client:
+        print(f"Connected to Telegram; resolving @{config.telegram_channel}...", flush=True)
         entity = client.get_entity(config.telegram_channel)
+        print("Resolved channel; fetching messages...", flush=True)
         for message in client.iter_messages(entity, offset_date=end_utc, reverse=False):
             if message.date is None:
                 continue
