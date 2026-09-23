@@ -42,7 +42,11 @@ def _render_feed(entries: list[dict], config: Config) -> str:
         image_path = entry.get("image_path")
         if image_path:
             image_url = escape(config.feed_base_url + image_path)
-            enclosure = f'      <enclosure url="{image_url}" type="image/jpeg"/>\n'
+            image_length = entry.get("image_length") or 0
+            enclosure = (
+                f'      <enclosure url="{image_url}" length="{image_length}" '
+                'type="image/jpeg"/>\n'
+            )
         items_xml.append(
             "    <item>\n"
             f"      <title>{title}</title>\n"
@@ -55,13 +59,15 @@ def _render_feed(entries: list[dict], config: Config) -> str:
         )
 
     now = format_datetime(datetime.now(timezone.utc))
+    self_url = escape(channel_link + "feed.xml")
     body = "\n".join(items_xml)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<rss version="2.0">\n'
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "  <channel>\n"
         f"    <title>{escape(config.feed_title)}</title>\n"
         f"    <link>{escape(channel_link)}</link>\n"
+        f'    <atom:link href="{self_url}" rel="self" type="application/rss+xml"/>\n'
         "    <description>Daily most-meaningful post from @" + escape(config.telegram_channel)
         + "</description>\n"
         "    <language>en</language>\n"
@@ -83,6 +89,12 @@ def add_daily_entry(
     (the RSS feed LinkedIn's Page "Add source" feature reads from)."""
     entries = _load_history()
 
+    image_length = None
+    if image_path:
+        full_image_path = os.path.join(DOCS_DIR, image_path)
+        if os.path.exists(full_image_path):
+            image_length = os.path.getsize(full_image_path)
+
     title_line = final_text.strip().splitlines()[0][:120]
     entry = {
         "date": entry_date,
@@ -93,6 +105,7 @@ def add_daily_entry(
         "published_at": datetime.now(timezone.utc).isoformat(),
         "guid": f"mutolaa-linkedin-{entry_date}-{post.message_id}",
         "image_path": image_path,
+        "image_length": image_length,
     }
 
     entries = [e for e in entries if e["date"] != entry_date]

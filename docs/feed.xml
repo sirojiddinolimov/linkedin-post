@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Mutolaa | Daily pick</title>
     <link>https://sirojiddinolimov.github.io/linkedin-post/</link>
+    <atom:link href="https://sirojiddinolimov.github.io/linkedin-post/feed.xml" rel="self" type="application/rss+xml"/>
     <description>Daily most-meaningful post from @mutolaaxona</description>
     <language>en</language>
-    <lastBuildDate>Wed, 23 Sep 2026 07:24:02 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 23 Sep 2026 08:41:22 +0000</lastBuildDate>
     <item>
       <title>"No matter how much we resist, we are all bound to say 'if only' at some point."</title>
       <link>https://t.me/mutolaaxona/4697</link>
       <guid isPermaLink="false">mutolaa-linkedin-2026-09-22-4697</guid>
       <pubDate>Wed, 23 Sep 2026 06:17:44 +0000</pubDate>
-      <enclosure url="https://sirojiddinolimov.github.io/linkedin-post/images/4697.jpg" type="image/jpeg"/>
+      <enclosure url="https://sirojiddinolimov.github.io/linkedin-post/images/4697.jpg" length="75680" type="image/jpeg"/>
       <description>"No matter how much we resist, we are all bound to say 'if only' at some point."
 
 — From "Sir" (The Secret) by Fatih Duman
