@@ -24,8 +24,8 @@ def pick_and_translate_with_claude(
     numbered = "\n\n".join(f"[{i}]\n{p.text}" for i, p in enumerate(posts))
 
     prompt = (
-        f"Below are all of yesterday's posts from the @{config.telegram_channel} "
-        "Telegram channel (Uzbek-language, about books/reading). Pick the ONE "
+        f"Below are posts from the @{config.telegram_channel} Telegram channel "
+        "(Uzbek-language, about books/reading). Pick the ONE "
         "most important and meaningful post - the one with the deepest, most "
         "useful content for readers, not simply the longest.\n\n"
         "Then turn it into a polished, professional LinkedIn post for the "
