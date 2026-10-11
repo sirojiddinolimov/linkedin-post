@@ -10,6 +10,11 @@ on:
         description: "Print the entry without updating the feed"
         type: boolean
         default: false
+      target_date:
+        description: "Local date to process (YYYY-MM-DD); defaults to yesterday"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -29,7 +34,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Select yesterday's best post and update RSS feed
+      - name: Select target day's best post and update RSS feed
         working-directory: src
         timeout-minutes: 3
         env:
@@ -40,6 +45,7 @@ jobs:
           FEED_BASE_URL: ${{ vars.FEED_BASE_URL }}
           FEED_TITLE: ${{ vars.FEED_TITLE || 'Mutolaa | Daily pick' }}
           DRY_RUN: ${{ inputs.dry_run && 'true' || '' }}
+          TARGET_DATE: ${{ inputs.target_date || '' }}
         run: python main.py
 
       - name: Commit updated feed and state
